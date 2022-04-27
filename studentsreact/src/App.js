@@ -11,9 +11,11 @@ function App() {
   const baseUrl = "https://localhost:44300/api/Student";
 
   const [data, setData] = useState([]);
-  const[IncludeModal, setIncludeModal]=useState(false);
-  const[EditModal, setEditModal]=useState(false);
-
+  const [updateData, setUpdateData] = useState(true);
+  const [IncludeModal, setIncludeModal]=useState(false);
+  const [EditModal, setEditModal]=useState(false);
+  const [RemoveModal, setRemoveModal]=useState(false);
+  
   const [selectedStudent, setSelectedStudent]=useState({
     id: '',
     name:'',
@@ -23,8 +25,9 @@ function App() {
 
   const selectStudent = (student, option) => {
     setSelectedStudent(student);
-    (option === "Edit") &&
-    openCloseEditModal()
+    (option === "Edit") 
+    ? openCloseEditModal()
+    : openCloseRemoveModal();
   }
   const openCloseIncludeModal=()=>{
     setIncludeModal(!IncludeModal);
@@ -32,6 +35,10 @@ function App() {
 
   const openCloseEditModal=()=>{
     setEditModal(!EditModal);
+  }
+
+  const openCloseRemoveModal=()=>{
+    setRemoveModal(!RemoveModal);
   }
 
   const handleChange = e=>{
@@ -58,6 +65,8 @@ function App() {
     .then(response=>{
       setData(data.concat(response.data));
       openCloseIncludeModal();
+      setUpdateData(true);
+
     }).catch(error=>{
       console.log(error);
     })
@@ -76,15 +85,33 @@ function App() {
             student.age   = resposta.age;
         }
       });
+      
+      setUpdateData(true);
       openCloseEditModal();
+
     }).catch(error =>{
       console.log(error);
     })
   }
 
+  const removeRequest = async()=>{
+    await axios.delete(baseUrl+"/"+selectedStudent.id)
+    .then(response=>{
+        setData(data.filter(student => student.id !== response.data));
+        setUpdateData(true);
+        openCloseRemoveModal();
+
+    }).catch(error =>{
+      console.log (error)
+    })
+  }
+
   useEffect(()=>{
-    getRequest();
-  })
+    if (updateData){
+      getRequest();
+      setUpdateData(false);
+    }
+  }, [updateData])
 
   return (
     <div className="student-container">
@@ -174,6 +201,17 @@ function App() {
           <button className="btn btn-danger"  onClick={()=>openCloseEditModal()}>Cancel</button>
         </ModalFooter>
       </Modal>
+
+      <Modal isOpen={RemoveModal}>
+        <ModalBody>
+            Confirm the exclusion of student: {selectedStudent && selectedStudent.name}?
+        </ModalBody>
+        <ModalFooter>
+          <button className="btn btn-primary" onClick={()=>removeRequest()}>Yes</button>
+          <button className="btn btn-danger"  onClick={()=>openCloseRemoveModal()}>No</button>
+        </ModalFooter>
+      </Modal>
+
     </div>
   );
 }
